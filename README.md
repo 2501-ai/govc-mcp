@@ -83,6 +83,11 @@ bun run ui
 | `GOVC_TIMEOUT_MS` |          | Subprocess timeout in ms (default: `120000`)                    |
 | `MCP_KEEP_ALIVE`  |          | Set `true` for persistent container mode (see above)            |
 
+Every variable above is also read under a `VMWARE_` prefix (`VMWARE_GOVC_URL`,
+`VMWARE_GOVC_PASSWORD`, ...). A host that spawns this server as a container and
+namespaces the env it injects - the 2501 engine does - can pass credentials
+through unchanged. The unprefixed name wins when both are set.
+
 ## SSH Tunnel
 
 If vCenter is only reachable through an internal network:

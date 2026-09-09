@@ -11,12 +11,27 @@ import { searchCommands } from './search';
 // Validate required env vars
 // ---------------------------------------------------------------------------
 
+// A host that spawns this server as a container (the 2501 engine, for one)
+// injects only the variables it holds under a VMWARE_ prefix, and forwards them
+// with the prefix intact. Unprefix them here so credentials passed through such
+// a host reach govc under the names it reads. A plain GOVC_* already in the
+// environment wins, so a hand-run container behaves exactly as before.
+const ENV_PREFIX = 'VMWARE_';
+for (const [key, value] of Object.entries(process.env)) {
+  if (!key.startsWith(ENV_PREFIX) || value === undefined) continue;
+  const unprefixed = key.slice(ENV_PREFIX.length);
+  if (unprefixed && process.env[unprefixed] === undefined) {
+    process.env[unprefixed] = value;
+  }
+}
+
 const REQUIRED_ENV = ['GOVC_URL', 'GOVC_USERNAME', 'GOVC_PASSWORD'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 
 if (missing.length) {
   console.error(`✗ Missing required env vars: ${missing.join(', ')}`);
   console.error('  Set GOVC_URL, GOVC_USERNAME, GOVC_PASSWORD (and optionally GOVC_INSECURE=true)');
+  console.error(`  A ${ENV_PREFIX} prefix on any of them is accepted too, e.g. ${ENV_PREFIX}GOVC_URL`);
   process.exit(1);
 }
 

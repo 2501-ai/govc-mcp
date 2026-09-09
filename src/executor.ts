@@ -10,6 +10,14 @@ export interface GovcResult {
 }
 
 const GOVC_BIN = process.env.GOVC_BIN || 'govc';
+
+/**
+ * Bun.spawn snapshots the environment at process start, so a child never sees a
+ * variable assigned to process.env at runtime - which is how the VMWARE_ prefix
+ * is unwrapped in index.ts. Pass the live object explicitly or govc launches
+ * without credentials and reports an empty URL.
+ */
+const spawnEnv = (): Record<string, string | undefined> => process.env;
 const EXEC_TIMEOUT_MS = parseInt(process.env.GOVC_TIMEOUT_MS || '120000', 10);
 
 /**
@@ -83,6 +91,7 @@ export const execGovc = async (
     const proc = Bun.spawn(args, {
       stdout: 'pipe',
       stderr: 'pipe',
+      env: spawnEnv(),
     });
 
     // Race against timeout — timer is cleaned up in `finally`
@@ -142,6 +151,7 @@ export const execGovcHelp = async (command: string): Promise<string> => {
     const proc = Bun.spawn([GOVC_BIN, command, '-h'], {
       stdout: 'pipe',
       stderr: 'pipe',
+      env: spawnEnv(),
     });
 
     const timeout = new Promise<never>((_, reject) => {
